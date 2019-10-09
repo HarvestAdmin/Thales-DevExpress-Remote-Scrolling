@@ -1,21 +1,53 @@
 import React from 'react';
 
 import DataGrid, { Scrolling, Paging, Column, HeaderFilter } from 'devextreme-react/data-grid';
-import * as AspNetData from 'devextreme-aspnet-data-nojquery';
-
-const dataSource = AspNetData.createStore({
-  key: 'Id',
-  loadUrl: 'https://js.devexpress.com/Demos/WidgetsGalleryDataService/api/Sales'
-});
 
 class App extends React.Component {
+  constructor() {
+    super();
+    this.apiUrl = 'http://localhost:62067/Matching/ResultGrid.aspx/GetPagedData';
+    this.StartTime = null;
+    this.userId = 48;
+    this.matchOrExecutionId = 176376;
+
+    this.state = {
+      dataSource: {},
+      outputType: 0,
+      action: '<actions><showdetails>1</showdetails></actions>',
+    };
+  }
+
+
+  componentDidMount() {
+    fetch(this.apiUrl, {
+      method: 'POST',
+      // body: JSON.stringify({ userId: this.state.userId, executionId: this.state.matchOrExecutionId, outputType: this.state.outputType, action: this.state.action }),
+      body: JSON.stringify({ UserId: this.userId, ExecutionId: this.matchOrExecutionId, OutputType: this.state.outputType, Action: this.state.action, LastRowNumber : 0, BlockSize : 100 }),
+      headers: {
+        "Content-Type": "application/json; charset=UTF-8",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    })
+      .then(response => {
+        this.StartTime = performance.now();
+        return response.json();
+      }, error => {
+        return error.json();
+      })
+      .then((jsonData) => {
+        console.log(jsonData);
+        this.setState({ dataSource: jsonData });
+      });
+  }
+
   render() {
     return (
       <DataGrid
-        elementAttr ={{
+        elementAttr={{
           id: 'gridContainer'
         }}
-        dataSource={dataSource}
+        dataSource={this.state.dataSource}
         showBorders={true}
         remoteOperations={true}
         wordWrapEnabled={true}
@@ -24,14 +56,11 @@ class App extends React.Component {
         <Paging pageSize={'100'} />
         <HeaderFilter visible={true} allowSearch={true} />
 
-        <Column dataField={'Id'} width={'75'} />
-        <Column dataField={'StoreName'} caption={'Store'} width={'150'} />
-        <Column dataField={'ProductCategoryName'} caption={'Category'} width={'120'} />
-        <Column dataField={'ProductName'} caption={'Product'} />
-        <Column dataField={'DateKey'} caption={'Date'} dataType={'date'} format={'yyyy-MM-dd'} width={'100'} />
-        <Column dataField={'SalesAmount'} caption={'Amount'} format={'currency'} width={'100'}>
-          <HeaderFilter groupInterval={1000} />
-        </Column>
+        <Column dataField={'GridRow'} width={'75'} />
+        <Column dataField={'MatchStatus'} caption={'Store'} width={'150'} />
+        <Column dataField={'MatchGroup'} caption={'Category'} width={'120'} />
+        <Column dataField={'gridcol_1'} caption={'Product'} />
+        
       </DataGrid>
     );
   }
